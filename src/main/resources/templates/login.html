@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ログイン | 内定ホイホイ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        body.login-roach-page {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            color: #f8fafc;
+            background-color: #0b1324;
+            background-image:
+                radial-gradient(ellipse 120% 80% at 50% 100%, rgba(15, 40, 25, 0.9) 0%, transparent 55%),
+                radial-gradient(circle at 14% 18%, rgba(255, 215, 0, 0.09) 0%, transparent 36%),
+                radial-gradient(circle at 86% 72%, rgba(217, 4, 41, 0.1) 0%, transparent 40%),
+                repeating-linear-gradient(-12deg, transparent, transparent 11px, rgba(255, 255, 255, 0.02) 11px, rgba(255, 255, 255, 0.02) 12px);
+            transition: background-color 0.7s ease, background-image 0.7s ease;
+        }
+        body.login-roach-page.login-roach-caught {
+            background-color: #e5e7eb;
+            background-image:
+                radial-gradient(at 0% 0%, rgba(255, 215, 0, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(217, 4, 41, 0.05) 0px, transparent 50%);
+        }
+        /* 外側: JS が left/top のみ更新（transform と混ぜない） */
+        #login-roach-stage.login-fleeing {
+            position: fixed;
+            z-index: 9999;
+            cursor: pointer;
+            filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.55));
+            will-change: left, top;
+        }
+        /* 内側: 縮小のみ（位置は親の left/top） */
+        #login-roach-scale {
+            transform: scale(0.1);
+            transform-origin: top left;
+        }
+        #login-roach-stage.login-settled {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 560px;
+            margin: 0 auto;
+            cursor: auto;
+            filter: none;
+        }
+        #login-roach-stage.login-settled #login-roach-scale {
+            transform: none;
+        }
+        /* 逃げ中は fadeIn の transform と競合させない */
+        #login-roach-stage.login-fleeing .container.login-page {
+            animation: none !important;
+        }
+    </style>
+</head>
+<body class="login-roach-page">
+<div id="login-roach-stage" class="login-fleeing" role="application" aria-label="ログイン。小さく動いているときはクリックで通常表示に戻ります。">
+<div id="login-roach-scale">
+<div class="container login-page" style="max-width: 560px;">
+    <div class="header login-header">
+        <h1 class="login-title">内定ホイホイ</h1>
+    </div>
+
+    <div th:if="${param.registered}" style="margin-bottom: 1rem; color: #34d399;">
+        登録が完了しました。ログインしてください。
+    </div>
+    <div th:if="${param.error}" style="margin-bottom: 1rem; color: #fca5a5;">
+        ユーザー名またはパスワードが違います。
+    </div>
+    <div th:if="${param.logout}" style="margin-bottom: 1rem; color: #cbd5e1;">
+        ログアウトしました。
+    </div>
+
+    <form th:action="@{/login}" method="post">
+        <div style="margin-bottom: 0.8rem;">
+            <label for="username">ユーザー名</label>
+            <input id="username" name="username" type="text" required autocomplete="username"
+                   style="width: 100%; padding: 0.65rem; border-radius: 10px; border: 1px solid rgba(255,215,0,0.25); background: rgba(15,23,42,0.6); color: #e2e8f0;">
+        </div>
+        <div style="margin-bottom: 1.2rem;">
+            <label for="password">パスワード</label>
+            <input id="password" name="password" type="password" required autocomplete="current-password"
+                   style="width: 100%; padding: 0.65rem; border-radius: 10px; border: 1px solid rgba(255,215,0,0.25); background: rgba(15,23,42,0.6); color: #e2e8f0;">
+        </div>
+
+        <button type="submit" class="btn btn-secondary login-main-btn">ログイン</button>
+    </form>
+
+    <div class="login-register-row">
+        <a th:href="@{/register}" class="btn login-register-btn">新規登録</a>
+    </div>
+</div>
+</div>
+</div>
+<script th:src="@{/js/login-roach.js}"></script>
+</body>
+</html>

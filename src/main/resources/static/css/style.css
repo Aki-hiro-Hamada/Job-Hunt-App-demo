@@ -1,0 +1,439 @@
+/* --- Google Fonts --- */
+
+@import url('https://fonts.googleapis.com/css2?family=Potta+One&display=swap');
+
+/* --- 変数定義（ゴキブリホイホイ・オマージュ配色） --- */
+:root {
+    --bg-color: #e5e7eb ;        /* ベースの深い緑 */
+    --text-color: #f8fafc;
+    --glass-bg: rgba(6, 28, 15, 0.95); /* コンテナ（より濃い緑） */
+    --glass-border: #ffd700;    /* 枠線はゴールド（黄色） */
+    --accent-color: #d90429;    /* メインの赤（新規登録など） */
+    --accent-hover: #ef233c;
+    --edit-color: #fbbf24;      /* 編集ボタン（鮮やかな黄色） */
+    --edit-hover: #f59e0b;
+}
+
+/* --- 全体レイアウト --- */
+body {
+    margin: 0;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    background: var(--bg-color);
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(255, 215, 0, 0.05) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(217, 4, 41, 0.05) 0px, transparent 50%);
+    color: var(--text-color);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+}
+
+/* --- コンテナ --- */
+.container {
+    width: 100%;
+    max-width: 1000px;
+    background: var(--glass-bg);
+    border: 2px solid var(--glass-border); /* 枠線を強調 */
+    border-radius: 12px; /* 少し角を尖らせてパッケージ感を出す */
+    padding: 2rem;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+    animation: fadeIn 0.6s ease-out;
+    overflow-x: auto;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- タイトル --- */
+h1 {
+    margin-top: 0;
+    font-size: 3.5rem;
+    font-family: 'Potta One', cursive !important;
+    color: #ffd700; /* ロゴは黄色 */
+    text-shadow: 3px 3px 0px #d90429; /* 赤い影で立体感を出す */
+    letter-spacing: 4px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+/* --- ログイン画面 --- */
+.login-header {
+    justify-content: flex-start;
+}
+
+.login-title {
+    white-space: nowrap;
+    margin: 0;
+    font-size: clamp(1.85rem, 5.2vw, 3.5rem);
+    line-height: 1.15;
+}
+
+.login-page .login-main-btn,
+.login-page .login-register-btn {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.login-page input[type="text"],
+.login-page input[type="password"] {
+    box-sizing: border-box;
+    display: block;
+    max-width: 100%;
+}
+
+.login-register-row {
+    margin-top: 1rem;
+}
+
+/* --- ボタン関連 --- */
+.btn {
+    display: inline-block;
+    background: var(--accent-color);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 800;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    text-transform: uppercase;
+}
+
+.btn:hover {
+    background: var(--accent-hover);
+    transform: scale(1.05);
+}
+
+.btn-secondary {
+    background: var(--edit-color) !important;
+    color: #061c0f !important; /* 黄色ボタンの時は文字を濃い緑に */
+    border: none !important;
+}
+
+.btn-secondary:hover {
+    background: var(--edit-hover) !important;
+    color: #061c0f !important;
+}
+
+/* --- テーブル関連 --- */
+th {
+    color: #ffd700;
+    font-weight: 800;
+}
+
+/* 一覧テーブル：列幅をコンテンツに依存させず、メモが横に膨らまないようにする */
+.applications-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    table-layout: fixed;
+}
+
+.applications-table col.col-company {
+    width: 22%;
+}
+
+.applications-table col.col-status {
+    width: 13%;
+}
+
+.applications-table col.col-interview {
+    width: 12%;
+}
+
+.applications-table col.col-memo {
+    /* 残り幅（colgroup 上は指定なしだが fixed レイアウト用に min を効かせる） */
+    min-width: 0;
+}
+
+.applications-table col.col-actions {
+    width: 200px;
+}
+
+.applications-table th,
+.applications-table td {
+    padding: 1rem 0.5rem;
+    vertical-align: top;
+}
+
+.applications-table th:nth-child(1),
+.applications-table td:nth-child(1) {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.applications-table td:nth-child(2) {
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.applications-table td:nth-child(3) {
+    white-space: pre-line;
+    text-align: center;
+    font-size: 0.95rem;
+    vertical-align: middle;
+}
+
+.memo-cell {
+    vertical-align: top;
+    min-width: 0;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    line-height: 1.5;
+}
+
+/* 一覧メモのみ最大5行（td は通常の表セルのまま／詳細は会社クリック先） */
+.applications-table .memo-cell-inner {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    line-height: 1.5;
+}
+
+/* --- ステータスバッジ（色分け） --- */
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    background: #475569;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.status-書類選考中 { background-color: #d90429 !important; } /* 選考中は警告の赤 */
+.status-内定 { background-color: #ffd700 !important; color: #061c0f !important; } /* 内定は栄光の黄色 */
+.status-応募前 { background-color: #2d3748 !important; }
+
+/* --- フォーム関連（選択肢が見えるように修正） --- */
+input, select, textarea {
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid var(--glass-border) !important;
+    color: #ffffff !important;
+}
+
+/* form-group 配下の幅を確実に統一（edit/create で面一にする） */
+.form-group {
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.form-group > input,
+.form-group > select,
+.form-group > textarea {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+textarea {
+    resize: vertical;
+}
+
+.actions {
+    margin-top: 1.25rem;
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+}
+
+select option {
+    background-color: #061c0f; /* 選択肢の背景を深い緑に固定 */
+    color: #ffffff;
+}
+
+/* テーブル（フォーム画面など一覧以外）：共通の罫線・セルスタイル */
+table:not(.applications-table) {
+    border-collapse: collapse !important;
+    width: 100% !important;
+}
+
+table:not(.applications-table) th,
+table:not(.applications-table) td {
+    padding: 1.2rem 0.5rem !important;
+    vertical-align: middle !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+.applications-table th,
+.applications-table td {
+    border: none !important;
+    background: transparent !important;
+}
+
+/* 行（tr）自体に一本の線を引く */
+tr {
+    border-bottom: 1px solid rgba(255, 215, 0, 0.4) !important;
+}
+
+.memo-cell p {
+    margin: 0 0 0.35rem 0;
+    white-space: pre-wrap;
+}
+
+.memo-cell p.history-note {
+    white-space: normal;
+}
+
+.history-note {
+    margin: 0.18rem 0;
+    padding-left: 0.35rem;
+    border-left: 2px solid rgba(255, 215, 0, 0.45);
+    font-size: 0.88rem;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.history-date {
+    font-weight: 700;
+    color: #ffd700;
+}
+
+/* 削除ボタンのスタイル */
+.btn-delete {
+    background-color: #4b5563 !important; /* 渋いグレー（駆除ボタン） */
+    color: white !important;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.btn-delete:hover {
+    background-color: #1f2937 !important; /* ホバーでさらに濃く */
+    transform: scale(1.05);
+}
+
+/* 操作列（5列目）：ボタンと履歴フォームをセル内に収める */
+.applications-table td:nth-child(5),
+.applications-table th:nth-child(5) {
+    width: 200px;
+    min-width: 200px;
+    max-width: 200px;
+    text-align: center;
+    vertical-align: middle;
+    white-space: normal !important;
+}
+
+.action-cell {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+}
+
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.6rem;
+    justify-content: center;
+}
+
+.action-btn {
+    padding: 0.3rem 0.65rem;
+    font-size: 0.82rem;
+    line-height: 1.2;
+}
+
+.history-form {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+    max-width: 100%;
+}
+
+.history-form input {
+    padding: 0.45rem 0.5rem;
+    font-size: 0.82rem;
+}
+
+.history-submit {
+    width: 100%;
+    padding: 0.45rem 0.6rem;
+    font-size: 0.82rem;
+    text-transform: none;
+}
+
+.company-link {
+    color: #fde047;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    display: inline;
+}
+
+.company-link:hover {
+    color: #fef08a;
+}
+
+/* --- 一覧: ソートボタン --- */
+.applications-table th.th-sort {
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.th-sort-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.th-sort-label {
+    font-weight: 800;
+    color: #ffd700;
+}
+
+.sort-btn-group {
+    display: inline-flex;
+    gap: 0.25rem;
+}
+
+a.sort-btn {
+    display: inline-block;
+    padding: 0.2rem 0.45rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1.2;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #061c0f;
+    background: rgba(255, 215, 0, 0.35);
+    border: 1px solid rgba(255, 215, 0, 0.65);
+    text-transform: none;
+}
+
+a.sort-btn:hover {
+    background: #ffd700;
+    color: #061c0f;
+}
+
+a.sort-btn.is-active {
+    background: #ffd700;
+    border-color: #fef08a;
+    box-shadow: 0 0 0 1px rgba(217, 4, 41, 0.45);
+}

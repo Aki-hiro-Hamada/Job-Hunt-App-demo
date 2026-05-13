@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>応募先一覧 | Job Applications</title>
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_parameter" th:content="${_csrf.parameterName}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>内定ホイホイ</h1>
+            <div style="display:flex; gap: 0.5rem; align-items:center; justify-content:flex-end;">
+                <a th:href="@{/applications/create}" class="btn">＋ 新規登録</a>
+                <form th:action="@{/logout}" method="post" style="display:inline;">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit" class="btn btn-secondary">ログアウト</button>
+                </form>
+            </div>
+        </div>
+        
+        <table class="applications-table">
+            <colgroup>
+                <col class="col-company">
+                <col class="col-status">
+                <col class="col-interview">
+                <col class="col-memo">
+                <col class="col-actions">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>会社名</th>
+                    <th class="th-sort">
+                        <div class="th-sort-inner">
+                            <span class="th-sort-label">ステータス</span>
+                            <span class="sort-btn-group">
+                                <a th:href="@{/applications(statusDir='asc',dateDir=${dateSort})}"
+                                   class="sort-btn"
+                                   th:classappend="${statusSort == 'asc'} ? 'is-active' : ''"
+                                   title="進捗が早い順（応募前→辞退）">昇</a>
+                                <a th:href="@{/applications(statusDir='desc',dateDir=${dateSort})}"
+                                   class="sort-btn"
+                                   th:classappend="${statusSort == 'desc'} ? 'is-active' : ''"
+                                   title="進捗が遅い順（辞退→応募前）">降</a>
+                            </span>
+                        </div>
+                    </th>
+                    <th class="th-sort">
+                        <div class="th-sort-inner">
+                            <span class="th-sort-label">日付</span>
+                            <span class="sort-btn-group">
+                                <a th:href="@{/applications(statusDir=${statusSort},dateDir='asc')}"
+                                   class="sort-btn"
+                                   th:classappend="${dateSort == 'asc'} ? 'is-active' : ''"
+                                   title="面接日が早い順">昇</a>
+                                <a th:href="@{/applications(statusDir=${statusSort},dateDir='desc')}"
+                                   class="sort-btn"
+                                   th:classappend="${dateSort == 'desc'} ? 'is-active' : ''"
+                                   title="面接日が遅い順">降</a>
+                            </span>
+                        </div>
+                    </th>
+                    <th>メモ</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="applications-tbody" th:attr="data-status-sort=${statusSort},data-date-sort=${dateSort}">
+                <tr th:each="app : ${applications}">
+                    <td>
+                        <a th:href="@{/applications/{id}(id=${app.id})}" th:text="${app.companyName}" class="company-link"></a>
+                    </td>
+                    <td>
+                        <span class="status-badge" th:text="${app.status}"></span>
+                    </td>
+					<!-- 年と月日の間で改行し、日本語形式にする -->
+					<td>
+                        <th:block th:if="${app.interviewDate != null}">
+                            <span th:text="${#temporals.format(app.interviewDate, 'yyyy年')}"></span><br/>
+                            <span th:text="${#temporals.format(app.interviewDate, 'M月d日')}"></span>
+                        </th:block>
+                        <th:block th:if="${app.interviewDate == null}">—</th:block>
+                    </td>
+					<td class="memo-cell">
+                        <div class="memo-cell-inner"
+                             th:if="${(app.memo != null and !#strings.isEmpty(app.memo)) or (app.jobHistories != null and !#lists.isEmpty(app.jobHistories))}">
+                            <p th:if="${app.memo != null and !#strings.isEmpty(app.memo)}" th:text="${app.memo}"></p>
+                            <div th:if="${app.jobHistories != null and !#lists.isEmpty(app.jobHistories)}">
+                                <p th:each="h : ${app.jobHistories}" class="history-note">
+                                    <span class="history-date" th:text="${#temporals.format(h.eventDate, 'yyyy/MM/dd')}"></span>
+                                    <span th:text="${' ' + h.action}"></span>
+                                    <span th:if="${h.note != null and !#strings.isEmpty(h.note)}" th:text="${' - ' + h.note}"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="action-cell">
+                        <div class="action-buttons">
+                            <a th:href="@{/applications/edit/{id}(id=${app.id})}" class="btn btn-secondary action-btn">編集</a>
+                            <form th:action="@{/applications/delete/{id}(id=${app.id})}" method="post" style="display:inline;">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                <button type="submit"
+                                        class="btn btn-delete action-btn"
+                                        onclick="return confirm('本当にこの応募情報を駆除（削除）しますか？')">
+                                    削除
+                                </button>
+                            </form>
+                        </div>
+					</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(applications)}">
+                    <td colspan="5" style="text-align: center; color: #94a3b8; padding: 3rem;">
+                        登録された応募先がありません。
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        (function () {
+            const POLL_INTERVAL_MS = 5000;
+            const tbody = document.getElementById('applications-tbody');
+
+            if (!tbody) return;
+
+            const sortQuery = () => {
+                const ss = tbody.getAttribute('data-status-sort') || 'asc';
+                const ds = tbody.getAttribute('data-date-sort') || 'asc';
+                return 'statusDir=' + encodeURIComponent(ss) + '&dateDir=' + encodeURIComponent(ds);
+            };
+            const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content') || '';
+            const csrfParam = document.querySelector('meta[name="_csrf_parameter"]')?.getAttribute('content') || '_csrf';
+
+            const escapeHtml = (str) => {
+                return String(str ?? '').replace(/[&<>"']/g, (ch) => {
+                    const map = {
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        '"': '&quot;',
+                        "'": '&#39;'
+                    };
+                    return map[ch];
+                });
+            };
+
+            const formatInterviewDate = (dateStr) => {
+                if (!dateStr) return '';
+
+                // Jackson が LocalDate を配列で返すケースも考慮
+                if (Array.isArray(dateStr) && dateStr.length >= 3) {
+                    const y = String(dateStr[0]);
+                    const m = String(parseInt(dateStr[1], 10));
+                    const d = String(parseInt(dateStr[2], 10));
+                    return `${y}年<br>${m}月${d}日`;
+                }
+
+                const s = String(dateStr);
+                const [y, m, d] = s.split('-');
+                if (!y || !m || !d) return '';
+                const month = String(parseInt(m, 10));
+                const day = String(parseInt(d, 10));
+                return `${y}年<br>${month}月${day}日`;
+            };
+
+            const pad2 = (n) => String(n).padStart(2, '0');
+            const formatHistoryDate = (dateStr) => {
+                if (!dateStr) return '';
+
+                if (Array.isArray(dateStr) && dateStr.length >= 3) {
+                    const y = String(dateStr[0]);
+                    const m = String(parseInt(dateStr[1], 10));
+                    const d = String(parseInt(dateStr[2], 10));
+                    return `${y}/${pad2(m)}/${pad2(d)}`;
+                }
+
+                const s = String(dateStr);
+                const [y, m, d] = s.split('-');
+                if (!y || !m || !d) return '';
+                return `${y}/${pad2(m)}/${pad2(d)}`;
+            };
+
+            const buildRow = (app) => {
+                const id = app.id;
+                const urlId = encodeURIComponent(id);
+                const companyName = app.companyName ?? '';
+                const status = app.status ?? '';
+                const memo = app.memo ?? '';
+                const interviewHtml = formatInterviewDate(app.interviewDate);
+                const jobHistories = Array.isArray(app.jobHistories) ? app.jobHistories : [];
+
+                const memoHtml = (memo && String(memo).trim().length > 0)
+                    ? `<p>${escapeHtml(memo)}</p>`
+                    : '';
+
+                const historiesHtml = jobHistories.length > 0
+                    ? `<div>${jobHistories.map((h) => {
+                        const eventDate = h.eventDate;
+                        const action = h.action ?? '';
+                        const note = h.note;
+                        const noteHtml = (note != null && String(note).trim().length > 0)
+                            ? ` - ${escapeHtml(note)}`
+                            : '';
+                        if (eventDate) {
+                            return `<p class="history-note"><span class="history-date">${escapeHtml(formatHistoryDate(eventDate))}</span><span>${' ' + escapeHtml(action)}</span>${noteHtml}</p>`;
+                        }
+                        // eventDate が無い場合は日付部分を省略
+                        return `<p class="history-note"><span>${escapeHtml(action)}</span>${noteHtml}</p>`;
+                    }).join('')}</div>`
+                    : '';
+
+                const historiesBlock = (memoHtml || historiesHtml)
+                    ? `${memoHtml}${historiesHtml}`
+                    : '';
+                const memoCellBody = historiesBlock
+                    ? `<div class="memo-cell-inner">${historiesBlock}</div>`
+                    : '';
+
+                return `
+                    <tr>
+                        <td>
+                            <a href="/applications/${urlId}" class="company-link">${escapeHtml(companyName)}</a>
+                        </td>
+                        <td>
+                            <span class="status-badge">${escapeHtml(status)}</span>
+                        </td>
+                        <td>${interviewHtml}</td>
+                        <td class="memo-cell">
+                            ${memoCellBody}
+                        </td>
+                        <td class="action-cell">
+                            <div class="action-buttons">
+                                <a href="/applications/edit/${urlId}" class="btn btn-secondary action-btn">編集</a>
+                                <form action="/applications/delete/${urlId}" method="post" style="display:inline;">
+                                    <input type="hidden" name="${csrfParam}" value="${escapeHtml(csrfToken)}"/>
+                                    <button type="submit"
+                                            class="btn btn-delete action-btn"
+                                            onclick="return confirm('本当にこの応募情報を駆除（削除）しますか？')">
+                                        削除
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            };
+
+            const render = (apps) => {
+                const list = Array.isArray(apps) ? apps : [];
+
+                if (list.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: #94a3b8; padding: 3rem;">
+                                登録された応募先がありません。
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = list.map(buildRow).join('');
+            };
+
+            let timerId = null;
+            const refresh = async () => {
+                try {
+                    const res = await fetch('/applications/api/applications?' + sortQuery(), { cache: 'no-store' });
+                    if (!res.ok) return;
+                    const apps = await res.json();
+                    render(apps);
+                } catch (e) {
+                    // 通信失敗などはコンソールに出して、画面更新をスキップする
+                    console.error(e);
+                }
+            };
+
+            const start = () => {
+                if (timerId != null) return;
+                refresh();
+                timerId = setInterval(refresh, POLL_INTERVAL_MS);
+            };
+
+            const stop = () => {
+                if (timerId == null) return;
+                clearInterval(timerId);
+                timerId = null;
+            };
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) stop();
+                else start();
+            });
+
+            start();
+        })();
+    </script>
+</body>
+</html>

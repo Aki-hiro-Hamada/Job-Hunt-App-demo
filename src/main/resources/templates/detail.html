@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>応募先詳細 | Job Applications</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="container" style="max-width: 800px;">
+        <div class="header">
+            <h1>応募先詳細</h1>
+            <a th:href="@{/applications}" class="btn btn-secondary">一覧へ戻る</a>
+        </div>
+
+        <div id="detail-dynamic" th:data-job-id="${jobApplication.id}">
+            <div style="margin-bottom: 1.2rem;">
+                <h2 th:text="${jobApplication.companyName}" style="margin-bottom: 0.4rem;"></h2>
+                <p style="margin: 0.2rem 0;">
+                    ステータス: <span th:text="${jobApplication.status}"></span>
+                </p>
+                <p style="margin: 0.2rem 0;" th:if="${jobApplication.interviewDate != null}">
+                    日付: <span th:text="${#temporals.format(jobApplication.interviewDate, 'yyyy年M月d日')}"></span>
+                </p>
+                <p style="margin: 0.4rem 0 0;" th:if="${jobApplication.memo != null and !#strings.isEmpty(jobApplication.memo)}"
+                   th:text="${jobApplication.memo}"></p>
+            </div>
+
+            <hr style="border-color: rgba(255, 215, 0, 0.3); margin: 1.5rem 0;">
+
+            <h3 style="margin-top: 0;">過去の履歴</h3>
+            <div th:if="${jobApplication.jobHistories != null and !#lists.isEmpty(jobApplication.jobHistories)}">
+                <div th:each="h : ${jobApplication.jobHistories}" style="padding: 0.75rem 0; border-top: 1px solid rgba(255, 215, 0, 0.2);">
+                    <div style="font-weight: 700;">
+                        <span th:if="${h.eventDate != null}" th:text="${#temporals.format(h.eventDate, 'yyyy年M月d日')}"></span>
+                        <span th:if="${h.eventDate != null}"> - </span>
+                        <span th:text="${h.action}"></span>
+                    </div>
+                    <p style="margin: 0.35rem 0 0;" th:if="${h.note != null and !#strings.isEmpty(h.note)}" th:text="${h.note}"></p>
+                </div>
+            </div>
+            <p th:if="${jobApplication.jobHistories == null or #lists.isEmpty(jobApplication.jobHistories)}">
+                履歴はまだ登録されていません。
+            </p>
+
+            <div class="actions" style="margin-top: 1.5rem;">
+                <a th:href="@{/applications/edit/{id}(id=${jobApplication.id})}" class="btn">この応募先を編集</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const POLL_INTERVAL_MS = 5000;
+            const root = document.getElementById('detail-dynamic');
+            if (!root) return;
+
+            const jobId = root.dataset.jobId;
+            const escapeHtml = (str) => {
+                return String(str ?? '').replace(/[&<>"']/g, (ch) => {
+                    const map = {
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        '"': '&quot;',
+                        "'": '&#39;'
+                    };
+                    return map[ch];
+                });
+            };
+
+            const formatJPDate = (dateStr) => {
+                if (!dateStr) return '';
+
+                // Jackson が LocalDate を配列で返すケースも考慮
+                if (Array.isArray(dateStr) && dateStr.length >= 3) {
+                    const y = String(dateStr[0]);
+                    const m = String(parseInt(dateStr[1], 10));
+                    const d = String(parseInt(dateStr[2], 10));
+                    return `${y}年${m}月${d}日`;
+                }
+
+                const s = String(dateStr);
+                const [y, m, d] = s.split('-');
+                if (!y || !m || !d) return '';
+                const month = String(parseInt(m, 10));
+                const day = String(parseInt(d, 10));
+                return `${y}年${month}月${day}日`;
+            };
+
+            const render = (app) => {
+                const companyName = app.companyName ?? '';
+                const status = app.status ?? '';
+                const interviewDate = app.interviewDate;
+                const memo = app.memo;
+                const jobHistories = Array.isArray(app.jobHistories) ? app.jobHistories : [];
+
+                const interviewLine = interviewDate
+                    ? `<p style="margin: 0.2rem 0;">日付: <span>${formatJPDate(interviewDate)}</span></p>`
+                    : '';
+
+                const memoLine = (memo != null && String(memo).trim().length > 0)
+                    ? `<p style="margin: 0.4rem 0 0;">${escapeHtml(memo)}</p>`
+                    : '';
+
+                const historiesHtml = jobHistories.length > 0
+                    ? `<div>${jobHistories.map((h) => {
+                        const eventDate = h.eventDate;
+                        const action = h.action ?? '';
+                        const note = h.note;
+                        const noteLine = (note != null && String(note).trim().length > 0)
+                            ? `<p style="margin: 0.35rem 0 0;">${escapeHtml(note)}</p>`
+                            : '';
+
+                        const datePart = eventDate ? `${escapeHtml(formatJPDate(eventDate))}` : '';
+                        const dash = eventDate ? ' - ' : '';
+
+                        return `
+                            <div style="padding: 0.75rem 0; border-top: 1px solid rgba(255, 215, 0, 0.2);">
+                                <div style="font-weight: 700;">
+                                    ${eventDate ? `<span>${datePart}</span>` : ''}
+                                    ${dash ? `<span>${dash}</span>` : ''}
+                                    <span>${escapeHtml(action)}</span>
+                                </div>
+                                ${noteLine}
+                            </div>
+                        `;
+                    }).join('')}</div>`
+                    : `<p>履歴はまだ登録されていません。</p>`;
+
+                const editHref = `/applications/edit/${encodeURIComponent(jobId)}`;
+
+                root.innerHTML = `
+                    <div style="margin-bottom: 1.2rem;">
+                        <h2 style="margin-bottom: 0.4rem;">${escapeHtml(companyName)}</h2>
+                        <p style="margin: 0.2rem 0;">ステータス: <span>${escapeHtml(status)}</span></p>
+                        ${interviewLine}
+                        ${memoLine}
+                    </div>
+
+                    <hr style="border-color: rgba(255, 215, 0, 0.3); margin: 1.5rem 0;">
+
+                    <h3 style="margin-top: 0;">過去の履歴</h3>
+                    ${historiesHtml}
+
+                    <div class="actions" style="margin-top: 1.5rem;">
+                        <a href="${editHref}" class="btn">この応募先を編集</a>
+                    </div>
+                `;
+            };
+
+            let timerId = null;
+            const refresh = async () => {
+                try {
+                    const res = await fetch(`/applications/api/applications/${encodeURIComponent(jobId)}`, { cache: 'no-store' });
+                    if (!res.ok) return;
+                    const app = await res.json();
+                    render(app);
+                } catch (e) {
+                    console.error(e);
+                }
+            };
+
+            const start = () => {
+                if (timerId != null) return;
+                refresh();
+                timerId = setInterval(refresh, POLL_INTERVAL_MS);
+            };
+
+            const stop = () => {
+                if (timerId == null) return;
+                clearInterval(timerId);
+                timerId = null;
+            };
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) stop();
+                else start();
+            });
+
+            start();
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+# ローカル開発用 MongoDB（アプリはデフォルトで mongodb://localhost:27017 を参照）
+services:
+  mongo:
+    image: mongo:7
+    container_name: job-hunt-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - job_hunt_mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "quit(db.runCommand({ ping: 1 }).ok ? 0 : 1)"]
+      interval: 3s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+
+volumes:
+  job_hunt_mongo_data:
