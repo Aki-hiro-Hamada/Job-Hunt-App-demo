@@ -1,7 +1,6 @@
 package com.example.jobapp.service;
 
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -10,6 +9,7 @@ import java.time.LocalDate;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.jobapp.entity.JobApplication;
 import com.example.jobapp.entity.JobHistory;
@@ -27,9 +27,10 @@ public class JobApplicationService {
      * @param statusDir {@code asc} または {@code desc}（以外は asc 扱い）
      * @param dateDir   {@code asc} または {@code desc}（以外は asc 扱い）
      */
+    @Transactional(readOnly = true)
     public List<JobApplication> findAll(String ownerUserId, String statusDir, String dateDir) {
         // 表示順: 1) ステータス順 2) 日付順（null は最後）
-        // MongoDB の Sort だけだと「日本語ステータスの任意順」を表現しづらいので、アプリ側で並べ替える。
+        // DB の Sort だけだと「日本語ステータスの任意順」を表現しづらいので、アプリ側で並べ替える。
         List<JobApplication> list = repository.findAllByOwnerUserId(ownerUserId, Sort.unsorted());
 
         boolean statusAsc = !"desc".equalsIgnoreCase(normalizeSortDir(statusDir));
@@ -78,37 +79,47 @@ public class JobApplicationService {
         return "desc".equals(t) ? "desc" : "asc";
     }
 
-    public JobApplication findById(String ownerUserId, String id) {
+    @Transactional(readOnly = true)
+    public JobApplication findById(String ownerUserId, Long id) {
         return repository.findByIdAndOwnerUserId(id, ownerUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid application Id:" + id));
     }
 
+    @Transactional
     public void save(String ownerUserId, JobApplication application) {
         application.setOwnerUserId(ownerUserId);
 
-        if (application.getId() != null && application.getJobHistories() == null) {
-            repository.findByIdAndOwnerUserId(application.getId(), ownerUserId)
-                    .ifPresent(existing -> application.setJobHistories(existing.getJobHistories()));
+        // 編集時はフォームに jobHistories が含まれないため、null のまま save すると
+        // カスケード設定により既存履歴が消える事故になる。
+        // 既存レコードを読み込み、フォームで入力された値だけを反映する。
+        if (application.getId() != null) {
+            JobApplication existing = repository.findByIdAndOwnerUserId(application.getId(), ownerUserId)
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid application Id:" + application.getId()));
+            existing.setCompanyName(application.getCompanyName());
+            existing.setStatus(application.getStatus());
+            existing.setInterviewDate(application.getInterviewDate());
+            existing.setMemo(application.getMemo());
+            repository.save(existing);
+            return;
         }
         repository.save(application);
     }
 
-    public void deleteById(String ownerUserId, String id) {
+    @Transactional
+    public void deleteById(String ownerUserId, Long id) {
         repository.deleteByIdAndOwnerUserId(id, ownerUserId);
     }
 
+    @Transactional(readOnly = true)
     public long getCountByStatus(String ownerUserId, String status) {
         return repository.countByOwnerUserIdAndStatus(ownerUserId, status);
     }
 
-    public void addHistory(String ownerUserId, String jobId, JobHistory newHistory) {
+    @Transactional
+    public void addHistory(String ownerUserId, Long jobId, JobHistory newHistory) {
         JobApplication job = repository.findByIdAndOwnerUserId(jobId, ownerUserId)
                 .orElseThrow(() -> new RuntimeException("応募先が見つかりません"));
-        if (job.getJobHistories() == null) {
-            job.setJobHistories(new ArrayList<>());
-        }
-        job.getJobHistories().add(newHistory);
+        job.addHistory(newHistory);
         repository.save(job);
     }
-
 }

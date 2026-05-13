@@ -75,7 +75,7 @@ public class JobApplicationController {
     }
 
     @GetMapping("/{id}")
-    public String detail(@PathVariable("id") String id, Model model, Principal principal) {
+    public String detail(@PathVariable("id") Long id, Model model, Principal principal) {
         JobApplication application = service.findById(principal.getName(), id);
         model.addAttribute("jobApplication", application);
         return "detail";
@@ -109,14 +109,14 @@ public class JobApplicationController {
     }
 
     @GetMapping("/edit/{id}")
-    public String editForm(@PathVariable("id") String id, Model model, Principal principal) {
+    public String editForm(@PathVariable("id") Long id, Model model, Principal principal) {
         JobApplication application = service.findById(principal.getName(), id);
         model.addAttribute("jobApplication", application);
         return "edit";
     }
 
     @PostMapping("/edit/{id}")
-    public String edit(@PathVariable("id") String id,
+    public String edit(@PathVariable("id") Long id,
                        @Validated @ModelAttribute JobApplication jobApplication,
                        BindingResult result,
                        Model model,
@@ -133,18 +133,18 @@ public class JobApplicationController {
      * 削除は GET で副作用を起こさない（リンクを踏んだだけで消える事故を防ぐ）。
      */
     @GetMapping("/delete/{id}")
-    public String deleteGetCompat(@PathVariable("id") String id) {
+    public String deleteGetCompat(@PathVariable("id") Long id) {
         return "redirect:/applications";
     }
 
     @PostMapping("/delete/{id}")
-    public String delete(@PathVariable("id") String id, Principal principal) {
+    public String delete(@PathVariable("id") Long id, Principal principal) {
         service.deleteById(principal.getName(), id);
         return "redirect:/applications";
     }
 
     @PostMapping("/{id}/history")
-    public String addHistory(@PathVariable("id") String id, @ModelAttribute JobHistory newHistory, Principal principal) {
+    public String addHistory(@PathVariable("id") Long id, @ModelAttribute JobHistory newHistory, Principal principal) {
         service.addHistory(principal.getName(), id, newHistory);
         return "redirect:/applications/edit/" + id;
     }
@@ -187,7 +187,7 @@ public class JobApplicationController {
      */
     @GetMapping("/api/applications/{id}")
     @ResponseBody
-    public ResponseEntity<JobApplication> apiApplication(@PathVariable("id") String id, Principal principal) {
+    public ResponseEntity<JobApplication> apiApplication(@PathVariable("id") Long id, Principal principal) {
         try {
             return ResponseEntity.ok()
                     .cacheControl(CacheControl.noStore())

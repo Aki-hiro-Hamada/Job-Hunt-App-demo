@@ -1,29 +1,63 @@
 #!/usr/bin/env bash
-# ローカルで MongoDB を立ち上げてから Spring Boot を起動します。
-# 使い方: ./run-local.sh   （Java 17 + Docker が必要）
+# ローカルで Spring Boot を起動します。
+#
+# 既定: application.properties の Supabase 接続先を使用します。
+#   事前に Supabase のパスワードを環境変数で指定:
+#     export SUPABASE_DB_PASSWORD='＜Supabaseのパスワード＞'
+#
+# ローカルの Docker PostgreSQL を使いたい場合は --local-pg を付けます。
+#   ./run-local.sh --local-pg
+#
+# 引数はそのまま spring-boot:run に渡せます（例: --spring-boot.run.arguments=--spring.profiles.active=dev）。
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
-if command -v docker >/dev/null 2>&1; then
+USE_LOCAL_PG=0
+SB_ARGS=()
+for arg in "$@"; do
+  case "$arg" in
+    --local-pg)
+      USE_LOCAL_PG=1
+      ;;
+    *)
+      SB_ARGS+=("$arg")
+      ;;
+  esac
+done
+
+if [ "$USE_LOCAL_PG" = "1" ]; then
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "docker が PATH にありません。--local-pg を使うには Docker が必要です。" >&2
+    exit 1
+  fi
   docker compose up -d
-  echo "MongoDB の準備を待っています..."
+  echo "PostgreSQL の準備を待っています..."
   attempts=0
   while [ "$attempts" -lt 60 ]; do
-    if docker compose exec -T mongo mongosh --quiet --eval 'quit(db.runCommand({ ping: 1 }).ok ? 0 : 1)' 2>/dev/null; then
+    if docker compose exec -T postgres pg_isready -U postgres >/dev/null 2>&1; then
       break
     fi
     attempts=$((attempts + 1))
     sleep 1
   done
   if [ "$attempts" -ge 60 ]; then
-    echo "MongoDB が起動しませんでした。docker compose logs mongo を確認してください。" >&2
+    echo "PostgreSQL が起動しませんでした。docker compose logs postgres を確認してください。" >&2
     exit 1
   fi
-  echo "MongoDB OK"
+  echo "PostgreSQL OK"
+  export SPRING_DATASOURCE_URL='jdbc:postgresql://localhost:5432/job_hunting'
+  export SPRING_DATASOURCE_USERNAME='postgres'
+  export SUPABASE_DB_PASSWORD='postgres'
 else
-  echo "注意: docker が PATH にありません。MongoDB を別途 localhost:27017 で起動している前提で続行します。" >&2
+  if [ -z "${SUPABASE_DB_PASSWORD:-}" ]; then
+    echo "環境変数 SUPABASE_DB_PASSWORD が未設定です。" >&2
+    echo "  export SUPABASE_DB_PASSWORD='＜Supabaseのパスワード＞'" >&2
+    echo "を実行してから再度起動してください。ローカルの Postgres を使う場合は --local-pg を付けてください。" >&2
+    exit 1
+  fi
+  echo "Supabase に接続して起動します（application.properties の設定を使用）。"
 fi
 
 echo "アプリを http://localhost:${PORT:-8081}/ で起動します（未登録なら /register からユーザー登録）。"
-exec ./mvnw spring-boot:run "$@"
+exec ./mvnw spring-boot:run "${SB_ARGS[@]}"

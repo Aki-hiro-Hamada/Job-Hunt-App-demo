@@ -51,8 +51,8 @@ public class AuthController {
         } catch (DataAccessException e) {
             log.warn("User registration failed (database): {}", e.toString());
             model.addAttribute("error",
-                    "データベースへの保存に失敗しました。Render の MongoDB 接続（SPRING_DATA_MONGODB_URI 等）と、"
-                            + "Atlas のネットワーク許可・DB ユーザーの readWrite 権限を確認してください。");
+                    "データベースへの保存に失敗しました。Render の Supabase 接続（SPRING_DATASOURCE_URL / "
+                            + "SPRING_DATASOURCE_USERNAME / SUPABASE_DB_PASSWORD）と、Supabase 側のテーブル権限を確認してください。");
             model.addAttribute("username", username != null ? username : "");
             return "register";
         } catch (Exception e) {
