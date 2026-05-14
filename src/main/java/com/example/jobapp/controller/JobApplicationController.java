@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.SmartValidator;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -35,6 +36,7 @@ public class JobApplicationController {
 
     private final JobApplicationService service;
     private final Environment environment;
+    private final SmartValidator smartValidator;
 
     private boolean isListPreviewWithoutAuth() {
         if (environment.acceptsProfiles(Profiles.of("dev"))) {
@@ -112,31 +114,50 @@ public class JobApplicationController {
 
     @GetMapping("/edit/{id}")
     public String editForm(@PathVariable("id") Long id, Model model, Principal principal) {
-        JobApplication application = service.findById(principal.getName(), id);
-        model.addAttribute("jobApplication", application);
+        JobApplication loaded = service.findById(principal.getName(), id);
+        JobApplication form = new JobApplication();
+        form.setId(loaded.getId());
+        form.setCompanyName(loaded.getCompanyName());
+        form.setOwnerUserId(loaded.getOwnerUserId());
+        // ステータス・日付・メモは空欄で表示（会社名のみ既存値）
+        model.addAttribute("jobApplication", form);
+        model.addAttribute("histories", loaded.getJobHistories());
         return "edit";
     }
 
     @PostMapping("/edit/{id}")
     public String edit(@PathVariable("id") Long id,
-                       @Validated @ModelAttribute JobApplication jobApplication,
+                       @ModelAttribute JobApplication jobApplication,
                        BindingResult result,
                        Model model,
-                       @RequestParam(value = "recordHistory", required = false) Boolean recordHistory,
                        Principal principal) {
+        JobApplication existing = service.findById(principal.getName(), id);
+        mergeEditFormFromExisting(jobApplication, existing);
+        jobApplication.setId(id);
+        smartValidator.validate(jobApplication, result);
         if (result.hasErrors()) {
+            model.addAttribute("histories", existing.getJobHistories());
             return "edit";
         }
-        jobApplication.setId(id);
         service.save(principal.getName(), jobApplication);
-        if (Boolean.TRUE.equals(recordHistory)) {
-            JobHistory line = new JobHistory();
-            line.setAction(jobApplication.getStatus());
-            line.setEventDate(jobApplication.getInterviewDate());
-            line.setNote(jobApplication.getMemo());
-            service.addHistory(principal.getName(), id, line);
-        }
         return "redirect:/applications/edit/" + id;
+    }
+
+    /**
+     * 編集画面は未入力のままの項目を既存値で埋めてから Bean Validation する（空欄表示と保存の両立）。
+     */
+    private static void mergeEditFormFromExisting(JobApplication form, JobApplication existing) {
+        if (form.getStatus() == null || form.getStatus().isBlank()) {
+            form.setStatus(existing.getStatus());
+        } else {
+            form.setStatus(form.getStatus().trim());
+        }
+        if (form.getInterviewDate() == null) {
+            form.setInterviewDate(existing.getInterviewDate());
+        }
+        if (form.getMemo() == null || form.getMemo().isBlank()) {
+            form.setMemo(existing.getMemo());
+        }
     }
 
     /**

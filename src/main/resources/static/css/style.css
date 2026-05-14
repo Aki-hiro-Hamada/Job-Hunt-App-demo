@@ -335,34 +335,23 @@ tr {
     white-space: nowrap;
 }
 
-.form-hint {
-    margin: 0.35rem 0 0;
-    font-size: 0.82rem;
-    color: #94a3b8;
-    line-height: 1.4;
+/* 応募先編集: 余白を詰め、フォーム直下にボタンが来るようにする */
+.edit-page .header {
+    margin-bottom: 1rem;
 }
 
-.edit-record-history-row {
-    margin-top: 0.25rem;
+.edit-page-form .form-group {
+    margin-bottom: 0.6rem;
 }
 
-.edit-record-history-label {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-    cursor: pointer;
-    font-weight: 600;
-    color: #e2e8f0;
-}
-
-.edit-record-history-label input {
-    margin-top: 0.2rem;
-    flex-shrink: 0;
+.edit-page-form .actions {
+    margin-top: 0.75rem;
+    margin-bottom: 0;
 }
 
 .edit-registered-history-block {
-    margin-top: 2rem;
-    padding-top: 1.5rem;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
     border-top: 1px solid rgba(255, 215, 0, 0.25);
 }
 
