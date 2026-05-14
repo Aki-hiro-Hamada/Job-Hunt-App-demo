@@ -114,7 +114,7 @@ public class JobApplicationController {
 
     @GetMapping("/edit/{id}")
     public String editForm(@PathVariable("id") Long id, Model model, Principal principal) {
-        JobApplication loaded = service.findById(principal.getName(), id);
+        JobApplication loaded = service.findByIdForEdit(principal.getName(), id);
         JobApplication form = new JobApplication();
         form.setId(loaded.getId());
         form.setCompanyName(loaded.getCompanyName());
@@ -131,7 +131,7 @@ public class JobApplicationController {
                        BindingResult result,
                        Model model,
                        Principal principal) {
-        JobApplication existing = service.findById(principal.getName(), id);
+        JobApplication existing = service.findByIdForEdit(principal.getName(), id);
         mergeEditFormFromExisting(jobApplication, existing);
         jobApplication.setId(id);
         smartValidator.validate(jobApplication, result);
@@ -186,7 +186,7 @@ public class JobApplicationController {
             Model model,
             Principal principal) {
         try {
-            model.addAttribute("jobApplication", service.findById(principal.getName(), jobId));
+            model.addAttribute("jobApplication", service.findByIdForEdit(principal.getName(), jobId));
             model.addAttribute("jobHistory", service.findHistoryById(principal.getName(), jobId, historyId));
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);

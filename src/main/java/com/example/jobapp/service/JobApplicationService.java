@@ -86,6 +86,24 @@ public class JobApplicationService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid application Id:" + id));
     }
 
+    /**
+     * 編集画面用。履歴が0件の応募先は、応募先のステータス・日付・メモから初回分の履歴を1件作成する
+     * （新規登録のみ応募先テーブルにしか無かった既存データの補完も兼ねる）。
+     */
+    @Transactional
+    public JobApplication findByIdForEdit(String ownerUserId, Long id) {
+        JobApplication app = findById(ownerUserId, id);
+        if (app.getJobHistories() == null || app.getJobHistories().isEmpty()) {
+            JobHistory initial = new JobHistory();
+            initial.setAction(app.getStatus());
+            initial.setEventDate(app.getInterviewDate());
+            initial.setNote(app.getMemo());
+            app.addHistory(initial);
+            repository.save(app);
+        }
+        return findById(ownerUserId, id);
+    }
+
     @Transactional
     public void save(String ownerUserId, JobApplication application) {
         application.setOwnerUserId(ownerUserId);
@@ -102,6 +120,13 @@ public class JobApplicationService {
             existing.setMemo(application.getMemo());
             repository.save(existing);
             return;
+        }
+        if (application.getJobHistories() == null || application.getJobHistories().isEmpty()) {
+            JobHistory initial = new JobHistory();
+            initial.setAction(application.getStatus());
+            initial.setEventDate(application.getInterviewDate());
+            initial.setNote(application.getMemo());
+            application.addHistory(initial);
         }
         repository.save(application);
     }
