@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -127,5 +128,55 @@ public class JobApplicationService {
                 .orElseThrow(() -> new RuntimeException("応募先が見つかりません"));
         job.addHistory(newHistory);
         repository.save(job);
+    }
+
+    @Transactional(readOnly = true)
+    public JobHistory findHistoryById(String ownerUserId, Long jobId, Long historyId) {
+        JobApplication job = repository.findByIdAndOwnerUserId(jobId, ownerUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid application Id:" + jobId));
+        return job.getJobHistories().stream()
+                .filter(h -> historyId.equals(h.getId()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Invalid history Id:" + historyId));
+    }
+
+    @Transactional
+    public void updateHistory(String ownerUserId, Long jobId, Long historyId,
+            String action, String eventDateRaw, String note) {
+        if (action == null || action.isBlank()) {
+            throw new IllegalArgumentException("ステータス（アクション）は必須です");
+        }
+        JobApplication job = repository.findByIdAndOwnerUserId(jobId, ownerUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid application Id:" + jobId));
+        JobHistory h = job.getJobHistories().stream()
+                .filter(x -> historyId.equals(x.getId()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Invalid history Id:" + historyId));
+        h.setAction(action.trim());
+        h.setEventDate(parseOptionalLocalDate(eventDateRaw));
+        h.setNote(note != null && !note.isBlank() ? note : null);
+        repository.save(job);
+    }
+
+    @Transactional
+    public void deleteHistory(String ownerUserId, Long jobId, Long historyId) {
+        JobApplication job = repository.findByIdAndOwnerUserId(jobId, ownerUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid application Id:" + jobId));
+        boolean removed = job.getJobHistories().removeIf(h -> historyId.equals(h.getId()));
+        if (!removed) {
+            throw new IllegalArgumentException("Invalid history Id:" + historyId);
+        }
+        repository.save(job);
+    }
+
+    private static LocalDate parseOptionalLocalDate(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(raw.trim());
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("日付の形式が正しくありません", e);
+        }
     }
 }

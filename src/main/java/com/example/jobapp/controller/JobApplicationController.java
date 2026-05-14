@@ -6,6 +6,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
 
@@ -120,13 +122,21 @@ public class JobApplicationController {
                        @Validated @ModelAttribute JobApplication jobApplication,
                        BindingResult result,
                        Model model,
+                       @RequestParam(value = "recordHistory", required = false) Boolean recordHistory,
                        Principal principal) {
         if (result.hasErrors()) {
             return "edit";
         }
         jobApplication.setId(id);
         service.save(principal.getName(), jobApplication);
-        return "redirect:/applications";
+        if (Boolean.TRUE.equals(recordHistory)) {
+            JobHistory line = new JobHistory();
+            line.setAction(jobApplication.getStatus());
+            line.setEventDate(jobApplication.getInterviewDate());
+            line.setNote(jobApplication.getMemo());
+            service.addHistory(principal.getName(), id, line);
+        }
+        return "redirect:/applications/edit/" + id;
     }
 
     /**
@@ -147,6 +157,55 @@ public class JobApplicationController {
     public String addHistory(@PathVariable("id") Long id, @ModelAttribute JobHistory newHistory, Principal principal) {
         service.addHistory(principal.getName(), id, newHistory);
         return "redirect:/applications/edit/" + id;
+    }
+
+    @GetMapping("/edit/{jobId}/history/{historyId}")
+    public String editHistoryForm(@PathVariable("jobId") Long jobId,
+            @PathVariable("historyId") Long historyId,
+            Model model,
+            Principal principal) {
+        try {
+            model.addAttribute("jobApplication", service.findById(principal.getName(), jobId));
+            model.addAttribute("jobHistory", service.findHistoryById(principal.getName(), jobId, historyId));
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        return "history-edit";
+    }
+
+    @PostMapping("/edit/{jobId}/history/{historyId}")
+    public String updateHistory(@PathVariable("jobId") Long jobId,
+            @PathVariable("historyId") Long historyId,
+            @RequestParam("action") String action,
+            @RequestParam(value = "eventDate", required = false) String eventDate,
+            @RequestParam(value = "note", required = false) String note,
+            Principal principal) {
+        try {
+            service.updateHistory(principal.getName(), jobId, historyId, action, eventDate, note);
+        } catch (IllegalArgumentException e) {
+            throw mapHistoryIllegalArgument(e);
+        }
+        return "redirect:/applications/edit/" + jobId;
+    }
+
+    @PostMapping("/edit/{jobId}/history/{historyId}/delete")
+    public String deleteHistory(@PathVariable("jobId") Long jobId,
+            @PathVariable("historyId") Long historyId,
+            Principal principal) {
+        try {
+            service.deleteHistory(principal.getName(), jobId, historyId);
+        } catch (IllegalArgumentException e) {
+            throw mapHistoryIllegalArgument(e);
+        }
+        return "redirect:/applications/edit/" + jobId;
+    }
+
+    private static ResponseStatusException mapHistoryIllegalArgument(IllegalArgumentException e) {
+        String m = e.getMessage() != null ? e.getMessage() : "";
+        if (m.startsWith("Invalid")) {
+            return new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        return new ResponseStatusException(HttpStatus.BAD_REQUEST, m);
     }
 
     /**
