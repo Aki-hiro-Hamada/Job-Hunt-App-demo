@@ -65,8 +65,9 @@
 <div id="login-roach-stage" class="login-fleeing" role="application" aria-label="ログイン。小さく動いているときはクリックで通常表示に戻ります。">
 <div id="login-roach-scale">
 <div class="container login-page" style="max-width: 560px;">
-    <div class="header login-header">
+    <div class="header">
         <h1 class="login-title">内定ホイホイ</h1>
+        <a th:href="@{/register}" class="btn btn-secondary">新規登録はこちら</a>
     </div>
 
     <div th:if="${param.registered}" style="margin-bottom: 1rem; color: #34d399;">
@@ -93,10 +94,6 @@
 
         <button type="submit" class="btn btn-secondary login-main-btn">ログイン</button>
     </form>
-
-    <div class="login-register-row">
-        <a th:href="@{/register}" class="btn login-register-btn">新規登録</a>
-    </div>
 </div>
 </div>
 </div>

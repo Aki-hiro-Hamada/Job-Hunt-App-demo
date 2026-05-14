@@ -1,5 +1,9 @@
 package com.example.jobapp.entity;
 
+import java.util.Comparator;
+
+import org.hibernate.annotations.OrderBy;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,7 +12,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -49,7 +52,7 @@ public class JobApplication {
     private LocalDate interviewDate;
 
     @OneToMany(mappedBy = "jobApplication", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    @OrderBy("eventDate ASC")
+    @OrderBy(clause = "event_date desc nulls last, id desc")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private List<JobHistory> jobHistories = new ArrayList<>();
@@ -64,5 +67,28 @@ public class JobApplication {
         }
         history.setJobApplication(this);
         jobHistories.add(history);
+    }
+
+    /**
+     * 一覧のステータス表示用。履歴がある場合は「イベント日が最も新しい履歴」の action を優先し、
+     * 無い・日付がすべて空の場合は応募先の status を使う。
+     */
+    public String getDisplayStatus() {
+        JobHistory latest = pickLatestHistoryForDisplay();
+        if (latest != null && latest.getAction() != null && !latest.getAction().isBlank()) {
+            return latest.getAction().trim();
+        }
+        return status != null ? status : "";
+    }
+
+    private JobHistory pickLatestHistoryForDisplay() {
+        if (jobHistories == null || jobHistories.isEmpty()) {
+            return null;
+        }
+        return jobHistories.stream()
+                .max(Comparator
+                        .comparing(JobHistory::getEventDate, Comparator.nullsFirst(Comparator.naturalOrder()))
+                        .thenComparing(JobHistory::getId, Comparator.nullsFirst(Comparator.naturalOrder())))
+                .orElse(null);
     }
 }

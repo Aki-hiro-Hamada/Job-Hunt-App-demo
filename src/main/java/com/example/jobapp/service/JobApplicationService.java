@@ -115,8 +115,14 @@ public class JobApplicationService {
         return repository.countByOwnerUserIdAndStatus(ownerUserId, status);
     }
 
+    /**
+     * 履歴追加は find と save を同一トランザクションで行う（OSIV 無効時の detached マージと
+     * orphanRemoval 絡みの不整合で子が消えるのを防ぐ）。リクエスト束縛で id が付かないよう明示する。
+     */
     @Transactional
     public void addHistory(String ownerUserId, Long jobId, JobHistory newHistory) {
+        newHistory.setId(null);
+        newHistory.setJobApplication(null);
         JobApplication job = repository.findByIdAndOwnerUserId(jobId, ownerUserId)
                 .orElseThrow(() -> new RuntimeException("応募先が見つかりません"));
         job.addHistory(newHistory);

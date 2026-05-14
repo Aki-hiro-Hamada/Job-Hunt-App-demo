@@ -17,7 +17,7 @@
             <div style="margin-bottom: 1.2rem;">
                 <h2 th:text="${jobApplication.companyName}" style="margin-bottom: 0.4rem;"></h2>
                 <p style="margin: 0.2rem 0;">
-                    ステータス: <span th:text="${jobApplication.status}"></span>
+                    ステータス: <span th:text="${jobApplication.displayStatus}"></span>
                 </p>
                 <p style="margin: 0.2rem 0;" th:if="${jobApplication.interviewDate != null}">
                     日付: <span th:text="${#temporals.format(jobApplication.interviewDate, 'yyyy年M月d日')}"></span>
@@ -90,7 +90,9 @@
 
             const render = (app) => {
                 const companyName = app.companyName ?? '';
-                const status = app.status ?? '';
+                const displayStatus = (app.displayStatus != null && String(app.displayStatus).trim() !== '')
+                    ? app.displayStatus
+                    : (app.status ?? '');
                 const interviewDate = app.interviewDate;
                 const memo = app.memo;
                 const jobHistories = Array.isArray(app.jobHistories) ? app.jobHistories : [];
@@ -133,7 +135,7 @@
                 root.innerHTML = `
                     <div style="margin-bottom: 1.2rem;">
                         <h2 style="margin-bottom: 0.4rem;">${escapeHtml(companyName)}</h2>
-                        <p style="margin: 0.2rem 0;">ステータス: <span>${escapeHtml(status)}</span></p>
+                        <p style="margin: 0.2rem 0;">ステータス: <span>${escapeHtml(displayStatus)}</span></p>
                         ${interviewLine}
                         ${memoLine}
                     </div>

@@ -31,40 +31,41 @@
                 <col class="col-actions">
             </colgroup>
             <thead>
-                <tr>
+                <tr class="thead-label-row">
                     <th>会社名</th>
-                    <th class="th-sort">
-                        <div class="th-sort-inner">
-                            <span class="th-sort-label">ステータス</span>
-                            <span class="sort-btn-group">
-                                <a th:href="@{/applications(statusDir='asc',dateDir=${dateSort})}"
-                                   class="sort-btn"
-                                   th:classappend="${statusSort == 'asc'} ? 'is-active' : ''"
-                                   title="進捗が早い順（応募前→辞退）">昇</a>
-                                <a th:href="@{/applications(statusDir='desc',dateDir=${dateSort})}"
-                                   class="sort-btn"
-                                   th:classappend="${statusSort == 'desc'} ? 'is-active' : ''"
-                                   title="進捗が遅い順（辞退→応募前）">降</a>
-                            </span>
-                        </div>
-                    </th>
-                    <th class="th-sort">
-                        <div class="th-sort-inner">
-                            <span class="th-sort-label">日付</span>
-                            <span class="sort-btn-group">
-                                <a th:href="@{/applications(statusDir=${statusSort},dateDir='asc')}"
-                                   class="sort-btn"
-                                   th:classappend="${dateSort == 'asc'} ? 'is-active' : ''"
-                                   title="面接日が早い順">昇</a>
-                                <a th:href="@{/applications(statusDir=${statusSort},dateDir='desc')}"
-                                   class="sort-btn"
-                                   th:classappend="${dateSort == 'desc'} ? 'is-active' : ''"
-                                   title="面接日が遅い順">降</a>
-                            </span>
-                        </div>
-                    </th>
+                    <th class="th-sort-heading">ステータス</th>
+                    <th class="th-sort-heading">日付</th>
                     <th>メモ</th>
                     <th>操作</th>
+                </tr>
+                <tr class="thead-sort-row">
+                    <th class="th-sort-spacer" aria-hidden="true"></th>
+                    <th class="th-sort">
+                        <span class="sort-btn-group">
+                            <a th:href="@{/applications(statusDir='asc',dateDir=${dateSort})}"
+                               class="sort-btn"
+                               th:classappend="${statusSort == 'asc'} ? 'is-active' : ''"
+                               title="進捗が早い順（応募前→辞退）">昇</a>
+                            <a th:href="@{/applications(statusDir='desc',dateDir=${dateSort})}"
+                               class="sort-btn"
+                               th:classappend="${statusSort == 'desc'} ? 'is-active' : ''"
+                               title="進捗が遅い順（辞退→応募前）">降</a>
+                        </span>
+                    </th>
+                    <th class="th-sort">
+                        <span class="sort-btn-group">
+                            <a th:href="@{/applications(statusDir=${statusSort},dateDir='asc')}"
+                               class="sort-btn"
+                               th:classappend="${dateSort == 'asc'} ? 'is-active' : ''"
+                               title="面接日が早い順">昇</a>
+                            <a th:href="@{/applications(statusDir=${statusSort},dateDir='desc')}"
+                               class="sort-btn"
+                               th:classappend="${dateSort == 'desc'} ? 'is-active' : ''"
+                               title="面接日が遅い順">降</a>
+                        </span>
+                    </th>
+                    <th class="th-sort-spacer" aria-hidden="true"></th>
+                    <th class="th-sort-spacer" aria-hidden="true"></th>
                 </tr>
             </thead>
             <tbody id="applications-tbody" th:attr="data-status-sort=${statusSort},data-date-sort=${dateSort}">
@@ -73,7 +74,7 @@
                         <a th:href="@{/applications/{id}(id=${app.id})}" th:text="${app.companyName}" class="company-link"></a>
                     </td>
                     <td>
-                        <span class="status-badge" th:text="${app.status}"></span>
+                        <span class="status-badge" th:text="${app.displayStatus}"></span>
                     </td>
 					<!-- 年と月日の間で改行し、日本語形式にする -->
 					<td>
@@ -187,7 +188,9 @@
                 const id = app.id;
                 const urlId = encodeURIComponent(id);
                 const companyName = app.companyName ?? '';
-                const status = app.status ?? '';
+                const displayStatus = (app.displayStatus != null && String(app.displayStatus).trim() !== '')
+                    ? app.displayStatus
+                    : (app.status ?? '');
                 const memo = app.memo ?? '';
                 const interviewHtml = formatInterviewDate(app.interviewDate);
                 const jobHistories = Array.isArray(app.jobHistories) ? app.jobHistories : [];
@@ -225,7 +228,7 @@
                             <a href="/applications/${urlId}" class="company-link">${escapeHtml(companyName)}</a>
                         </td>
                         <td>
-                            <span class="status-badge">${escapeHtml(status)}</span>
+                            <span class="status-badge">${escapeHtml(displayStatus)}</span>
                         </td>
                         <td>${interviewHtml}</td>
                         <td class="memo-cell">

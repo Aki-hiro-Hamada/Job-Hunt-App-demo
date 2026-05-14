@@ -66,10 +66,6 @@ h1 {
 }
 
 /* --- ログイン画面 --- */
-.login-header {
-    justify-content: flex-start;
-}
-
 .login-title {
     white-space: nowrap;
     margin: 0;
@@ -77,8 +73,7 @@ h1 {
     line-height: 1.15;
 }
 
-.login-page .login-main-btn,
-.login-page .login-register-btn {
+.login-page .login-main-btn {
     display: block;
     width: 100%;
     max-width: 100%;
@@ -91,10 +86,6 @@ h1 {
     box-sizing: border-box;
     display: block;
     max-width: 100%;
-}
-
-.login-register-row {
-    margin-top: 1rem;
 }
 
 /* --- ボタン関連 --- */
@@ -390,22 +381,30 @@ tr {
     color: #fef08a;
 }
 
-/* --- 一覧: ソートボタン --- */
+/* --- 一覧: ソートボタン（見出し1行目／昇降2行目でメモ・会社名と高さを揃える） --- */
+.applications-table thead tr.thead-label-row th {
+    vertical-align: middle;
+}
+
+.applications-table thead .th-sort-heading {
+    font-weight: 800;
+    color: #ffd700;
+    text-align: center;
+}
+
+.applications-table thead tr.thead-sort-row th.th-sort {
+    text-align: center;
+}
+
+.applications-table thead .th-sort-spacer {
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+    vertical-align: middle;
+}
+
 .applications-table th.th-sort {
     vertical-align: middle;
     white-space: nowrap;
-}
-
-.th-sort-inner {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.35rem;
-}
-
-.th-sort-label {
-    font-weight: 800;
-    color: #ffd700;
 }
 
 .sort-btn-group {

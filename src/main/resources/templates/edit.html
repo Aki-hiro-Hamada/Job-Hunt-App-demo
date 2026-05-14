@@ -92,7 +92,12 @@
         <div th:if="${jobApplication.jobHistories != null and !#lists.isEmpty(jobApplication.jobHistories)}" style="margin-top: 1.5rem;">
             <h3>登録済み履歴</h3>
             <div th:each="h : ${jobApplication.jobHistories}" style="border-top: 1px solid rgba(255, 215, 0, 0.2); padding: 0.7rem 0;">
-                <div style="font-weight: 700;" th:text="${#temporals.format(h.eventDate, 'yyyy年M月d日') + ' - ' + h.action}"></div>
+                <div style="font-weight: 700;">
+                    <th:block th:if="${h.eventDate != null}">
+                        <span th:text="${#temporals.format(h.eventDate, 'yyyy年M月d日') + ' - '}"></span>
+                    </th:block>
+                    <span th:text="${h.action}"></span>
+                </div>
                 <div th:if="${h.note != null and !#strings.isEmpty(h.note)}" style="opacity: 0.9;" th:text="${h.note}"></div>
             </div>
         </div>
