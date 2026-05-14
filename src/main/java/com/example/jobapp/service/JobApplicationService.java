@@ -50,7 +50,7 @@ public class JobApplicationService {
                 .collect(Collectors.toMap(s -> s, statusOrder::indexOf));
 
         Comparator<JobApplication> byStatus = Comparator.comparingInt(app ->
-                statusRank.getOrDefault(app.getStatus(), Integer.MAX_VALUE)
+                statusRank.getOrDefault(app.getDisplayStatus(), Integer.MAX_VALUE)
         );
         if (!statusAsc) {
             byStatus = byStatus.reversed();
@@ -59,7 +59,7 @@ public class JobApplicationService {
         Comparator<LocalDate> dateKey = dateAsc
                 ? Comparator.nullsLast(Comparator.naturalOrder())
                 : Comparator.nullsLast(Comparator.reverseOrder());
-        Comparator<JobApplication> byDate = Comparator.comparing(JobApplication::getInterviewDate, dateKey);
+        Comparator<JobApplication> byDate = Comparator.comparing(JobApplication::getDisplayInterviewDate, dateKey);
 
         return list.stream()
                 .sorted(byStatus.thenComparing(byDate))

@@ -76,26 +76,21 @@
                     <td>
                         <span class="status-badge" th:text="${app.displayStatus}"></span>
                     </td>
-					<!-- 年と月日の間で改行し、日本語形式にする -->
+					<!-- 年と月日の間で改行（一覧では event_date が最も未来の履歴の日付、無ければ面接日） -->
 					<td>
-                        <th:block th:if="${app.interviewDate != null}">
-                            <span th:text="${#temporals.format(app.interviewDate, 'yyyy年')}"></span><br/>
-                            <span th:text="${#temporals.format(app.interviewDate, 'M月d日')}"></span>
+                        <th:block th:if="${app.displayInterviewDate != null}">
+                            <span th:text="${#temporals.format(app.displayInterviewDate, 'yyyy年')}"></span><br/>
+                            <span th:text="${#temporals.format(app.displayInterviewDate, 'M月d日')}"></span>
                         </th:block>
-                        <th:block th:if="${app.interviewDate == null}">—</th:block>
+                        <th:block th:if="${app.displayInterviewDate == null}">—</th:block>
                     </td>
 					<td class="memo-cell">
-                        <div class="memo-cell-inner"
-                             th:if="${(app.memo != null and !#strings.isEmpty(app.memo)) or (app.jobHistories != null and !#lists.isEmpty(app.jobHistories))}">
-                            <p th:if="${app.memo != null and !#strings.isEmpty(app.memo)}" th:text="${app.memo}"></p>
-                            <div th:if="${app.jobHistories != null and !#lists.isEmpty(app.jobHistories)}">
-                                <p th:each="h : ${app.jobHistories}" class="history-note">
-                                    <span class="history-date" th:text="${#temporals.format(h.eventDate, 'yyyy/MM/dd')}"></span>
-                                    <span th:text="${' ' + h.action}"></span>
-                                    <span th:if="${h.note != null and !#strings.isEmpty(h.note)}" th:text="${' - ' + h.note}"></span>
-                                </p>
-                            </div>
+                        <div class="memo-cell-inner" th:if="${app.displayMemoForList != null and !#strings.isEmpty(app.displayMemoForList)}">
+                            <p th:text="${app.displayMemoForList}"></p>
                         </div>
+                        <th:block th:if="${app.displayMemoForList == null or #strings.isEmpty(app.displayMemoForList)}">
+                            <span style="color: #94a3b8;">—</span>
+                        </th:block>
                     </td>
                     <td class="action-cell">
                         <div class="action-buttons">
@@ -167,23 +162,6 @@
                 return `${y}年<br>${month}月${day}日`;
             };
 
-            const pad2 = (n) => String(n).padStart(2, '0');
-            const formatHistoryDate = (dateStr) => {
-                if (!dateStr) return '';
-
-                if (Array.isArray(dateStr) && dateStr.length >= 3) {
-                    const y = String(dateStr[0]);
-                    const m = String(parseInt(dateStr[1], 10));
-                    const d = String(parseInt(dateStr[2], 10));
-                    return `${y}/${pad2(m)}/${pad2(d)}`;
-                }
-
-                const s = String(dateStr);
-                const [y, m, d] = s.split('-');
-                if (!y || !m || !d) return '';
-                return `${y}/${pad2(m)}/${pad2(d)}`;
-            };
-
             const buildRow = (app) => {
                 const id = app.id;
                 const urlId = encodeURIComponent(id);
@@ -191,36 +169,11 @@
                 const displayStatus = (app.displayStatus != null && String(app.displayStatus).trim() !== '')
                     ? app.displayStatus
                     : (app.status ?? '');
-                const memo = app.memo ?? '';
-                const interviewHtml = formatInterviewDate(app.interviewDate);
-                const jobHistories = Array.isArray(app.jobHistories) ? app.jobHistories : [];
-
-                const memoHtml = (memo && String(memo).trim().length > 0)
-                    ? `<p>${escapeHtml(memo)}</p>`
-                    : '';
-
-                const historiesHtml = jobHistories.length > 0
-                    ? `<div>${jobHistories.map((h) => {
-                        const eventDate = h.eventDate;
-                        const action = h.action ?? '';
-                        const note = h.note;
-                        const noteHtml = (note != null && String(note).trim().length > 0)
-                            ? ` - ${escapeHtml(note)}`
-                            : '';
-                        if (eventDate) {
-                            return `<p class="history-note"><span class="history-date">${escapeHtml(formatHistoryDate(eventDate))}</span><span>${' ' + escapeHtml(action)}</span>${noteHtml}</p>`;
-                        }
-                        // eventDate が無い場合は日付部分を省略
-                        return `<p class="history-note"><span>${escapeHtml(action)}</span>${noteHtml}</p>`;
-                    }).join('')}</div>`
-                    : '';
-
-                const historiesBlock = (memoHtml || historiesHtml)
-                    ? `${memoHtml}${historiesHtml}`
-                    : '';
-                const memoCellBody = historiesBlock
-                    ? `<div class="memo-cell-inner">${historiesBlock}</div>`
-                    : '';
+                const interviewHtml = formatInterviewDate(app.displayInterviewDate);
+                const displayMemo = app.displayMemoForList != null ? String(app.displayMemoForList).trim() : '';
+                const memoCellBody = displayMemo.length > 0
+                    ? `<div class="memo-cell-inner"><p>${escapeHtml(displayMemo)}</p></div>`
+                    : '<span style="color: #94a3b8;">—</span>';
 
                 return `
                     <tr>
@@ -230,7 +183,7 @@
                         <td>
                             <span class="status-badge">${escapeHtml(displayStatus)}</span>
                         </td>
-                        <td>${interviewHtml}</td>
+                        <td>${interviewHtml || '—'}</td>
                         <td class="memo-cell">
                             ${memoCellBody}
                         </td>

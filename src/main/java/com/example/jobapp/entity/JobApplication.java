@@ -70,18 +70,23 @@ public class JobApplication {
     }
 
     /**
-     * 一覧のステータス表示用。履歴がある場合は「イベント日が最も新しい履歴」の action を優先し、
-     * 無い・日付がすべて空の場合は応募先の status を使う。
+     * 一覧のステータス表示用。履歴がある場合は「{@code event_date} がカレンダー上で最も未来（最大）の履歴」の
+     * {@code action} を優先し、無い場合は応募先の {@code status} を使う。
      */
     public String getDisplayStatus() {
-        JobHistory latest = pickLatestHistoryForDisplay();
-        if (latest != null && latest.getAction() != null && !latest.getAction().isBlank()) {
-            return latest.getAction().trim();
+        JobHistory h = pickMostFutureHistoryForList();
+        if (h != null && h.getAction() != null && !h.getAction().isBlank()) {
+            return h.getAction().trim();
         }
         return status != null ? status : "";
     }
 
-    private JobHistory pickLatestHistoryForDisplay() {
+    /**
+     * 一覧で「ステータス・日付・メモ」を揃える基準となる履歴。
+     * {@code event_date} の最大値（＝1番未来の日付）の行を選び、同日複数なら {@code id} が大きい方。
+     * すべて {@code event_date} が null のときは {@code id} 最大のみで決める。
+     */
+    private JobHistory pickMostFutureHistoryForList() {
         if (jobHistories == null || jobHistories.isEmpty()) {
             return null;
         }
@@ -90,5 +95,32 @@ public class JobApplication {
                         .comparing(JobHistory::getEventDate, Comparator.nullsFirst(Comparator.naturalOrder()))
                         .thenComparing(JobHistory::getId, Comparator.nullsFirst(Comparator.naturalOrder())))
                 .orElse(null);
+    }
+
+    /**
+     * 一覧の「日付」列用。その「最も未来の event_date」の履歴に日付があればそれを、
+     * 無い（履歴なし／当該行のみ null）なら面接日 {@link #interviewDate} を返す。
+     */
+    public LocalDate getDisplayInterviewDate() {
+        JobHistory h = pickMostFutureHistoryForList();
+        if (h != null && h.getEventDate() != null) {
+            return h.getEventDate();
+        }
+        return interviewDate;
+    }
+
+    /**
+     * 一覧の「メモ」列用。上記と同一の「最も未来日の履歴」の {@link JobHistory#getNote()} のみ。
+     * 履歴が無い場合は応募先の自由メモ {@link #memo} を返す。
+     */
+    public String getDisplayMemoForList() {
+        JobHistory h = pickMostFutureHistoryForList();
+        if (h != null) {
+            if (h.getNote() != null && !h.getNote().isBlank()) {
+                return h.getNote().trim();
+            }
+            return "";
+        }
+        return memo != null ? memo.trim() : "";
     }
 }
